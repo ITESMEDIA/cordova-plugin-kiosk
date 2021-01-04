@@ -3,6 +3,12 @@ var exec = require('cordova/exec');
 
 var KioskPlugin = {
     
+    enterKiosk: function () {
+        exec(function () {}, function (error) {
+            alert("KioskPlugin.enterKiosk failed: " + error);
+        }, "KioskPlugin", "enterKiosk", []);
+    },
+    
     exitKiosk: function () {
         exec(function () {}, function (error) {
             alert("KioskPlugin.exitKiosk failed: " + error);

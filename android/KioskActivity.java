@@ -23,8 +23,7 @@ public class KioskActivity extends CordovaActivity {
 
     public static volatile boolean running = false;
     public static volatile Set<Integer> allowedKeys = Collections.EMPTY_SET;
-
-    private StatusBarOverlay statusBarOverlay = null;
+    public static volatile boolean enabled = false;
 
     @Override
     protected void onStart() {
@@ -50,43 +49,28 @@ public class KioskActivity extends CordovaActivity {
         }
         
         loadUrl(launchUrl);
-        
-        // https://github.com/apache/cordova-plugin-statusbar/blob/master/src/android/StatusBar.java
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        
-        // https://github.com/hkalina/cordova-plugin-kiosk/issues/14
-        View decorView = getWindow().getDecorView();
-        // Hide the status bar.
-        decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
-        // Remember that you should never show the action bar if the
-        // status bar is hidden, so hide that too if necessary.
-        ActionBar actionBar = getActionBar();
-        if (actionBar != null) actionBar.hide();
-        
-        // add overlay to prevent statusbar access by swiping
-        statusBarOverlay = StatusBarOverlay.createOrObtainPermission(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (statusBarOverlay != null) {
-            statusBarOverlay.destroy(this);
-            statusBarOverlay = null;
-        }
     }
 
     @Override
     protected void onPause() {
             super.onPause();
+        if (enabled) {
             ActivityManager activityManager = (ActivityManager) getApplicationContext()
                     .getSystemService(Context.ACTIVITY_SERVICE);
             activityManager.moveTaskToFront(getTaskId(), 0);
+        }
     }     
     
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (!enabled) {
+           return super.onKeyDown(keyCode, event); 
+        }
         System.out.println("onKeyDown event: keyCode = " + event.getKeyCode());
         return ! allowedKeys.contains(event.getKeyCode()); // prevent event from being propagated if not allowed
     }
@@ -101,7 +85,7 @@ public class KioskActivity extends CordovaActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if(!hasFocus) {
+        if(!hasFocus && enabled) {
             System.out.println("Focus lost - closing system dialogs");
             
             Intent closeDialog = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);

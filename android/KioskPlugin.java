@@ -22,6 +22,7 @@ import java.util.HashSet;
 
 public class KioskPlugin extends CordovaPlugin {
     
+    public static final String ENTER_KIOSK = "enterKiosk";
     public static final String EXIT_KIOSK = "exitKiosk";
     public static final String IS_IN_KIOSK = "isInKiosk";
     public static final String IS_SET_AS_LAUNCHER = "isSetAsLauncher";
@@ -32,7 +33,7 @@ public class KioskPlugin extends CordovaPlugin {
         try {
             if (IS_IN_KIOSK.equals(action)) {
                 
-                callbackContext.success(Boolean.toString(KioskActivity.running));
+                callbackContext.success(Boolean.toString(KioskActivity.running && KioskActivity.enabled));
                 return true;
                 
             } else if (IS_SET_AS_LAUNCHER.equals(action)) {
@@ -41,16 +42,15 @@ public class KioskPlugin extends CordovaPlugin {
                 callbackContext.success(Boolean.toString(myPackage.equals(findLauncherPackageName())));
                 return true;
                 
+            } else if (ENTER_KIOSK.equals(action)) {
+                
+                KioskActivity.enabled = true;
+                callbackContext.success();
+                return true;
+                
             } else if (EXIT_KIOSK.equals(action)) {
                 
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.addCategory(Intent.CATEGORY_HOME);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                
-                Intent chooser = Intent.createChooser(intent, "Select destination...");
-                if (intent.resolveActivity(cordova.getActivity().getPackageManager()) != null) {
-                    cordova.getActivity().startActivity(chooser);
-                }
+                KioskActivity.enabled = false;
                 
                 callbackContext.success();
                 return true;
